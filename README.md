@@ -1,4 +1,4 @@
-# CLI Search in the Reddit Conspiracy Corpus
+# Corpus Project CLI Search
 
 Simple search engine over a Reddit conspiracy corpus with three ranking models:
 - BM25
@@ -57,7 +57,7 @@ Run in verbose mode:
 python3 main.py --model fasttext --query "government surveillance" --limit 1500 --top-k 3 --verbose
 ```
 
-Interactive mode (missing parameters will be asked in terminal):
+Interactive mode (missing params will be asked in terminal):
 
 ```bash
 python3 main.py
@@ -91,7 +91,7 @@ py main.py
 
 ## Web Interface
 
-A separate web app is available in `web/` (in progress).
+A separate web app is available in `web/`.
 
 Quick start:
 
@@ -131,7 +131,7 @@ Prints:
 Example format:
 
 ```text
-1. Some post title | score=0.3456
+1. Some post title | score=12.3456
    Short text snippet from document...
 Search time: 0.0421 s
 ```
