@@ -1,6 +1,6 @@
 # CLI Search in the Reddit Conspiracy Corpus
 
-Simple search engine over a Reddit conspiracy corpus with three ranking models:
+Simple search engine over a Reddit conspiracy corpus ([source](https://www.kaggle.com/datasets/gpreda/reddit-conspiracy-theory)) with three ranking models:
 - BM25
 - Word2Vec
 - FastText
