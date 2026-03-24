@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Corpus Search</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="page">
+    <h1>Corpus Search</h1>
+    <p class="desc">Search Reddit conspiracy corpus with BM25, Word2Vec, or FastText.</p>
+
+    <form class="panel form" method="post" action="{{ url_for('search') }}">
+      <label>Query
+        <input type="text" name="query" required value="{{ form.query }}" placeholder="Type query">
+      </label>
+
+      <label>Model
+        <select name="model">
+          {% for model in models %}
+          <option value="{{ model }}" {% if form.model == model %}selected{% endif %}>{{ model }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>Data limit
+        <input type="number" name="limit" min="1" value="{{ form.limit }}">
+      </label>
+
+      <label>Number of entries
+        <input type="number" name="top_k" min="1" value="{{ form.top_k }}">
+      </label>
+
+      <label class="row">
+        <input type="checkbox" name="verbose" {% if form.verbose %}checked{% endif %}>
+        Verbose stats
+      </label>
+
+      <button type="submit">Search</button>
+    </form>
+
+    {% if error %}<p class="panel error">{{ error }}</p>{% endif %}
+    {% if search_time is not none %}<p class="panel ok">Search time: {{ '%.4f'|format(search_time) }} s</p>{% endif %}
+
+    {% if stats %}
+    <section class="panel stats">
+      <h2>Stats</h2>
+      <ul>
+        <li>Model: {{ stats.model }}</li>
+        <li>Rows loaded: {{ stats.rows_loaded }}</li>
+        <li>Documents created: {{ stats.documents_created }}</li>
+        <li>Unique words: {{ stats.unique_words }}</li>
+        <li>Avg tokens/doc: {{ '%.2f'|format(stats.avg_tokens_doc) }}</li>
+        <li>Query tokens: {{ stats.query_tokens }}</li>
+        <li>Load time: {{ '%.4f'|format(stats.load_time) }} s</li>
+        <li>Build time: {{ '%.4f'|format(stats.build_time) }} s</li>
+        <li>Search time: {{ '%.4f'|format(stats.search_time) }} s</li>
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if results %}
+      {% for item in results %}
+      <article class="panel result">
+        <h3>{{ item.index }}. {{ item.title }}</h3>
+        <p class="meta">Score: {{ '%.4f'|format(item.score) }} | Model: {{ form.model }}</p>
+        <p>{{ item.snippet }}</p>
+      </article>
+      {% endfor %}
+    {% elif search_time is not none and not error %}
+      <p class="panel">No matches found.</p>
+    {% endif %}
+  </main>
+</body>
+</html>
