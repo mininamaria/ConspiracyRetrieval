@@ -1,9 +1,12 @@
 import numpy as np
+import logging
 from rank_bm25 import BM25Okapi
 from sklearn.metrics.pairwise import cosine_similarity
 from gensim.models import Word2Vec, FastText
 from collections import Counter
 from sklearn.preprocessing import normalize
+
+logger = logging.getLogger(__name__)
 
 class SearchEngine:
     """
@@ -31,6 +34,7 @@ class SearchEngine:
         self.doc_freq = None
         self.word_freq = None
         self.total_docs = None
+        logger.info("Starting phase 4: initialize search engine")
         self.documents = documents
         # достаём токены из каждого документа для построения корпуса
         self.tokenized_corpus = [doc.tokens for doc in documents]
@@ -43,6 +47,7 @@ class SearchEngine:
         # плейсхолдеры для векторного представления документов
         self.doc_vectors_w2v = None
         self.doc_vectors_ft = None
+        logger.info("Finished phase 4: initialize search engine")
 
 
 
@@ -52,7 +57,9 @@ class SearchEngine:
         Построение индекса BM25 на основе токенизированного корпуса
         BM25 использует TF-IDF для ранжирования документов по релевантности
         """
+        logger.info("Starting phase 5.1: build BM25 model")
         self.bm25 = BM25Okapi(self.tokenized_corpus)
+        logger.info("Finished phase 5.1: build BM25 model")
 
     def search_bm25(self, query_tokens, top_k=5):
         """
@@ -65,13 +72,16 @@ class SearchEngine:
         Returns:
             list: Список словарей с результатами поиска (title, text, score)
         """
+        logger.info("Starting phase 6.1: run BM25 search")
         # получаем оценку релевантности для всех документов
         scores = self.bm25.get_scores(query_tokens)
 
         # сортируем документы по убыванию оценки и берём top_k
         top_idx = np.argsort(scores)[::-1][:top_k]
 
-        return self.format_results(top_idx, scores)
+        results = self.format_results(top_idx, scores)
+        logger.info("Finished phase 6.1: run BM25 search")
+        return results
 
     def search(self, model_name, query_tokens, top_k=5):
         # единая точка поиска по выбранной модели
@@ -105,6 +115,7 @@ class SearchEngine:
         Args:
             vector_size (int): размерность векторных представлений слов
         """
+        logger.info("Starting phase 5.2: build Word2Vec model")
 
         # обучаем модель
         self.w2v_model = Word2Vec(
@@ -120,6 +131,7 @@ class SearchEngine:
             self.calculate_mean_doc_vector(doc.tokens, self.w2v_model)
             for doc in self.documents
         ])
+        logger.info("Finished phase 5.2: build Word2Vec model")
 
     def search_word2vec(self, query_tokens, top_k=5):
         """
@@ -132,6 +144,7 @@ class SearchEngine:
         Returns:
             list: список словарей с результатами поиска
         """
+        logger.info("Starting phase 6.2: run Word2Vec search")
         # получаем вектор запроса (ср. арифм. векторов слов запроса)
         query_vector = self.calculate_mean_doc_vector(query_tokens, self.w2v_model)
         # считаем косинусную близость между вектором запроса и всеми документами
@@ -140,7 +153,9 @@ class SearchEngine:
         # сортируем по убыванию косинусной близости, берём top_k
         top_idx = np.argsort(cos_sims)[::-1][:top_k]
 
-        return self.format_results(top_idx, cos_sims)
+        results = self.format_results(top_idx, cos_sims)
+        logger.info("Finished phase 6.2: run Word2Vec search")
+        return results
 
     def weighted_doc_vector(self, tokens):
         vectors = []
@@ -170,6 +185,7 @@ class SearchEngine:
         Args:
             vector_size (int): размерность векторных представлений
         """
+        logger.info("Starting phase 5.3: build FastText model")
 
         # обучаем модель
         self.ft_model = FastText(
@@ -198,12 +214,13 @@ class SearchEngine:
 
         # нормализация
         self.doc_vectors_ft = normalize(self.doc_vectors_ft)
-
+        logger.info("Finished phase 5.3: build FastText model")
 
     def search_fasttext(self, query_tokens, top_k=5):
+        logger.info("Starting phase 6.3: run FastText search")
         # защита от пустого запроса
         if len(query_tokens) == 0:
-            print("Query vector is empty")
+            logger.info("Query vector is empty")
             return []
         # получаем вектор запроса
         query_vector = self.weighted_doc_vector(query_tokens)
@@ -214,7 +231,9 @@ class SearchEngine:
         # сортируем по убыванию, берём top_k
         top_idx = np.argsort(cos_sims)[::-1][:top_k]
 
-        return self.format_results(top_idx, cos_sims)
+        results = self.format_results(top_idx, cos_sims)
+        logger.info("Finished phase 6.3: run FastText search")
+        return results
 
 
     def calculate_mean_doc_vector(self, tokens, model):
