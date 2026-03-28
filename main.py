@@ -1,7 +1,19 @@
 import argparse
+import logging
 import sys
 
 from search_service import ALLOWED_MODELS, run_search
+
+
+logger = logging.getLogger(__name__)
+ENABLE_LOGS = True
+
+
+def configure_logging():
+  if ENABLE_LOGS:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+  else:
+    logging.disable(logging.CRITICAL)
 
 # выносим парсер в отдельную функцию
 def build_parser():
@@ -105,17 +117,23 @@ def print_verbose_stats(config, stats):
 
 
 def main():
-  # создаем парсер, парсим аргуманты и получаем конфиг для запроса
+  configure_logging()
+  logger.info("Starting phase 1: parse CLI arguments")
+  # Создаем парсер, парсим аргуманты и получаем конфиг для запроса
   parser = build_parser()
   args = parser.parse_args()
+  logger.info("Finished phase 1: parse CLI arguments")
 
   try:
+    logger.info("Starting phase 2: resolve and validate input config")
     config = resolve_config(args)
+    logger.info("Finished phase 2: resolve and validate input config")
   except ValueError as exc:
     print(f"Input error: {exc}", file=sys.stderr)
     return 2
 
   try:
+    logger.info("Starting phase 3: execute search pipeline")
     payload = run_search(
       query=config["query"],
       model=config["model"],
@@ -123,6 +141,7 @@ def main():
       top_k=config["top_k"],
       verbose=config["verbose"],
     )
+    logger.info("Finished phase 3: execute search pipeline")
   except ValueError as exc:
     print(f"Input error: {exc}", file=sys.stderr)
     return 2
@@ -137,10 +156,14 @@ def main():
   search_time = payload["search_time"]
 
   if config["verbose"] and payload["stats"]:
+    logger.info("Starting phase 4: print verbose stats")
     print_verbose_stats(config=config, stats=payload["stats"])
+    logger.info("Finished phase 4: print verbose stats")
 
+  logger.info("Starting phase 5: print search results")
   print_results(results)
-  # время поиска выводим всегда по требованию
+  logger.info("Finished phase 5: print search results")
+  # время поиска выводим всегда по требованию.
   print(f"Search time: {search_time:.4f} s")
   return 0
 
