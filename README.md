@@ -21,6 +21,7 @@ The app supports CLI flags and interactive fallback prompts.
 - `main.py` - CLI entry point
 - `corpus.py` - data loading and text preprocessing
 - `search_engine.py` - model building and search
+- `search_service.py` - core logic for the CLI and web interface
 - `data/reddit_ct.csv` - corpus data file
 - `requirements.txt` - Python dependencies
 
